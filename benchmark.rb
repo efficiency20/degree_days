@@ -9,7 +9,7 @@ require "pp"
 $LOAD_PATH.unshift(File.expand_path("."))
 require "degree_days"
 
-X = 25
+X = 100
 
 DAYS_IN_YEAR = 365
 HOURS_IN_DAY = 24
