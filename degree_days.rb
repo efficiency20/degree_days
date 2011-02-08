@@ -9,7 +9,7 @@ end
 class DegreeDays
 
   def initialize(options = {})
-    @options = HashWithIndifferentAccess.new(options)
+    @options = options.symbolize_keys
   end
 
   def calculate
