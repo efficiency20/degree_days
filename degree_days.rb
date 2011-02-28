@@ -30,48 +30,23 @@ class DegreeDays
   end
 
   def calculate
-    @heating = 0
-    @cooling = 0
-    @heating_days = 0
-    @cooling_days = 0
+    temps_matrix = NArray.to_na(@daily_temperatures)
 
-    @daily_temperatures.each do |day|
-      day_narr = NArray.to_na(day)
+    heating = temps_matrix.dup.mul!(-1).add!(@base_temperature - @heating_insulation)
+    heating.mul!(heating > 0)
+    heating = heating.mean(0)
+    heating.mul!(heating > @heating_threshold)
 
-      begin
-        heating_base = NArray.int(day.size).fill!(@base_temperature + (-1 * @heating_insulation))
-
-        differences = heating_base - day_narr
-        differences_above_zero = differences * (differences > NArray.int(differences.total).fill!(0))
-
-        average = differences_above_zero.sum / differences_above_zero.total
-
-        if average > @heating_threshold
-          @heating_days += 1
-          @heating += average
-        end
-      end
-
-      begin
-        cooling_base = NArray.int(day.size).fill!(@cooling_insulation + @base_temperature)
-
-        differences = day_narr - cooling_base
-        differences_above_zero = differences * (differences > NArray.int(differences.total).fill!(0))
-
-        average = differences_above_zero.sum / differences_above_zero.total
-
-        if average > @cooling_threshold
-          @cooling_days += 1
-          @cooling += average
-        end
-      end
-    end
+    cooling = temps_matrix.dup.sbt!(@cooling_insulation + @base_temperature)
+    cooling.mul!(cooling > 0)
+    cooling = cooling.mean(0)
+    cooling.mul!(cooling > @cooling_threshold)
 
     {
-      :heating => @heating,
-      :cooling => @cooling,
-      :heating_days => @heating_days,
-      :cooling_days => @cooling_days
+      :heating => heating.sum,
+      :cooling => cooling.sum,
+      :heating_days => (heating > 0).count_true,
+      :cooling_days => (cooling > 0).count_true
     }
   end
 
