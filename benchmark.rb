@@ -27,6 +27,8 @@ puts
 puts RUBY_DESCRIPTION
 Benchmark.bmbm do |x|
   x.report("calculate") do
+    res = nil
+
     X.times do
       degree_days = DegreeDays.new({
         :start_date         => start_date,
@@ -34,8 +36,10 @@ Benchmark.bmbm do |x|
         :daily_temperatures => temperatures
       })
 
-      degree_days.calculate
+      res = degree_days.calculate
     end
+
+    puts res.inspect
   end
 end
 puts
