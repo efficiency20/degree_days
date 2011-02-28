@@ -1,4 +1,7 @@
 # Calculates the heating/cooling degree days for a span of time
+require "rubygems"
+require "narray"
+require 'ruby-debug'
 
 Array.class_eval do
   def average
@@ -33,17 +36,34 @@ class DegreeDays
     @cooling_days = 0
 
     @daily_temperatures.each do |day|
-      heating_today = heating_day(day)
-      cooling_today = cooling_day(day)
+      day_narr = NArray.to_na(day)
 
-      if heating_today
-        @heating_days += 1
-        @heating += heating_today
+      begin
+        heating_base = NArray.int(day.size).fill!(@base_temperature + (-1 * @heating_insulation))
+
+        differences = heating_base - day_narr
+        differences_above_zero = differences * (differences > NArray.int(differences.total).fill!(0))
+
+        average = differences_above_zero.sum / differences_above_zero.total
+
+        if average > @heating_threshold
+          @heating_days += 1
+          @heating += average
+        end
       end
 
-      if cooling_today
-        @cooling_days += 1
-        @cooling += cooling_today
+      begin
+        cooling_base = NArray.int(day.size).fill!(@cooling_insulation + @base_temperature)
+
+        differences = day_narr - cooling_base
+        differences_above_zero = differences * (differences > NArray.int(differences.total).fill!(0))
+
+        average = differences_above_zero.sum / differences_above_zero.total
+
+        if average > @cooling_threshold
+          @cooling_days += 1
+          @cooling += average
+        end
       end
     end
 
@@ -53,28 +73,6 @@ class DegreeDays
       :heating_days => @heating_days,
       :cooling_days => @cooling_days
     }
-  end
-
-private
-
-  def heating_day(temps)
-    heat = temps.map {|temp| heating_degree(temp)}.average
-    (heat > @heating_threshold) ? heat : false
-  end
-
-  def cooling_day(temps)
-    cool = temps.map {|temp| cooling_degree(temp)}.average
-    (cool > @cooling_threshold) ? cool : false
-  end
-
-  def heating_degree(temp)
-    deg = @base_temperature - (temp + @heating_insulation)
-    [deg, 0].max
-  end
-
-  def cooling_degree(temp)
-    deg = (temp - @cooling_insulation) - @base_temperature
-    [deg, 0].max
   end
 
 end
